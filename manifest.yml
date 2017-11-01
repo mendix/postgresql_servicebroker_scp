@@ -1,0 +1,11 @@
+---
+timeout: 60
+instances: 1
+memory: 1024M
+env:
+    SPRING_PROFILES_ACTIVE: cloud
+    JAVA_OPTS: -Dsecurity.user.password=erno1234
+
+applications:
+- name: postgresql-cf-service-broker
+  path: target/postgresql-cf-service-broker-2.11.0-SNAPSHOT.jar

@@ -1,0 +1,9 @@
+/target
+.project
+.classpath
+.settings
+.idea/
+*.iml
+*.json
+*.csv
+*.properties
