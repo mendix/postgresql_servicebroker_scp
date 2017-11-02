@@ -67,7 +67,7 @@ public class BrokerConfiguration {
 
     @Bean
     public Catalog catalog() throws IOException {
-        ServiceDefinition serviceDefinition = new ServiceDefinition("pgschema", "elephantsql", "PostgreSQL on shared instance.",
+        ServiceDefinition serviceDefinition = new ServiceDefinition("pgshared", "postgresql_shared", "PostgreSQL on shared instance.",
                 true, false, getPlans(), getTags(), getServiceDefinitionMetadata(), Arrays.asList("syslog_drain"), null);
         return new Catalog(Arrays.asList(serviceDefinition));
     }
@@ -78,18 +78,18 @@ public class BrokerConfiguration {
 
     private static Map<String, Object> getServiceDefinitionMetadata() {
         Map<String, Object> sdMetadata = new HashMap<>();
-        sdMetadata.put("displayName", "PostgreSQLSchema");
+        sdMetadata.put("displayName", "PostgreSQL Shared");
         sdMetadata.put("imageUrl", "https://wiki.postgresql.org/images/3/30/PostgreSQL_logo.3colors.120x120.png");
-        sdMetadata.put("longDescription", "PostgreSQL Schema Service");
-        sdMetadata.put("providerDisplayName", "PostgreSQLSchema");
+        sdMetadata.put("longDescription", "This service allows you to re-use a PostgreSQL instance for multiple Applications");
+        sdMetadata.put("providerDisplayName", "PostgreSQL Shared");
         sdMetadata.put("documentationUrl", "http://mendix.com/postgresql");
         sdMetadata.put("supportUrl", "https://support.mendix.com");
         return sdMetadata;
     }
 
     private static List<Plan> getPlans() {
-        Plan basic = new Plan("postgresql-schema-plan", "Basic PostgreSQL Plan",
-                "A PG plan providing a single database on a shared instance with limited storage.", getBasicPlanMetadata());
+        Plan basic = new Plan("postgresql-shared-plan", "Shared",
+                "This plan will create a database on an existing PostgreSQL instance", getBasicPlanMetadata());
         return Arrays.asList(basic);
     }
 
