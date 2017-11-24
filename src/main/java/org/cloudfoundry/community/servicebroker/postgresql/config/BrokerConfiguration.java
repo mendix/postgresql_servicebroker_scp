@@ -31,12 +31,13 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import javax.sql.DataSource;
+import com.amazonaws.util.json.JSONArray;
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
+
+import javax.annotation.PostConstruct;
+
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -51,12 +52,47 @@ public class BrokerConfiguration {
 
     @Value("${MASTER_JDBC_URL}")
     private String jdbcUrl;
-
-
+    
+    @Value("${SERVICE_NAME}")
+    private String serviceName;
+    
+    private String vCapJDBCUrl;
+    
+    
+    @PostConstruct
+    public void init(){
+    	String vCapServices = System.getenv("VCAP_SERVICES");
+    	if (vCapServices != null) {
+	    	
+			try {
+				JSONObject vCapJson = new JSONObject(vCapServices);			
+				JSONArray pgList = vCapJson.getJSONArray("postgresql");
+		    	for( int i = 0; i < pgList.length(); i++)  {
+		    		JSONObject pgObject = pgList.getJSONObject(i);
+		    		if(pgObject != null) {
+		    			JSONObject credentialsJSON = pgObject.getJSONObject("credentials");
+		    			String db = credentialsJSON.getString("db");
+		    			String user = credentialsJSON.getString("username");
+		    			String password = credentialsJSON.getString("password");
+		    			String host = credentialsJSON.getString("hostname");
+		    			String port = credentialsJSON.getString("port");
+		    			this.vCapJDBCUrl = "jdbc:postgresql://" + host + ":" + port + "/" + db + "?user=" + user + "&password=" + password;
+		    			logger.info("JDBC URL found in VCAP settings: " + "jdbc:postgresql://" + host + ":" + port + "/" + db + "?user=" + user + "&password=....");
+		    			break; 
+		    		}
+		    	}
+			
+			} catch (JSONException e) {
+				logger.error(e.getMessage(), e);			
+			}
+    	}
+    }
+    
+    
     @Bean
-    public JdbcTemplate jdbcTemplate(){
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setUrl(this.jdbcUrl);
+    public JdbcTemplate jdbcTemplate(){        
+    	DriverManagerDataSource dataSource = new DriverManagerDataSource();        
+        dataSource.setUrl(this.vCapJDBCUrl == null?this.jdbcUrl:this.vCapJDBCUrl);
         return new JdbcTemplate(dataSource);
     }
 
@@ -67,7 +103,7 @@ public class BrokerConfiguration {
 
     @Bean
     public Catalog catalog() throws IOException {
-        ServiceDefinition serviceDefinition = new ServiceDefinition("pgshared", "postgresql_shared", "PostgreSQL on shared instance.",
+        ServiceDefinition serviceDefinition = new ServiceDefinition("pg_shared_" + this.serviceName, "postgresql_shared_" + this.serviceName, "PostgreSQL " + this.serviceName + " on shared instance.",
                 true, false, getPlans(), getTags(), getServiceDefinitionMetadata(), Arrays.asList("syslog_drain"), null);
         return new Catalog(Arrays.asList(serviceDefinition));
     }
@@ -76,19 +112,19 @@ public class BrokerConfiguration {
         return Arrays.asList("PostgreSQL", "Database storage");
     }
 
-    private static Map<String, Object> getServiceDefinitionMetadata() {
+    private Map<String, Object> getServiceDefinitionMetadata() {
         Map<String, Object> sdMetadata = new HashMap<>();
-        sdMetadata.put("displayName", "PostgreSQL Shared");
+        sdMetadata.put("displayName", "PostgreSQL " + this.serviceName + " Shared");
         sdMetadata.put("imageUrl", "https://wiki.postgresql.org/images/3/30/PostgreSQL_logo.3colors.120x120.png");
         sdMetadata.put("longDescription", "This service allows you to re-use a PostgreSQL instance for multiple Applications");
-        sdMetadata.put("providerDisplayName", "PostgreSQL Shared");
-        sdMetadata.put("documentationUrl", "http://mendix.com/postgresql");
-        sdMetadata.put("supportUrl", "https://support.mendix.com");
+        sdMetadata.put("providerDisplayName", "PostgreSQL " + this.serviceName + " Shared");
+        sdMetadata.put("documentationUrl", "https://github.com/mendix/postgresql_servicebroker_scp");
+        sdMetadata.put("supportUrl", "https://github.com/mendix/postgresql_servicebroker_scp");
         return sdMetadata;
     }
 
-    private static List<Plan> getPlans() {
-        Plan basic = new Plan("postgresql-shared-plan", "Shared",
+    private List<Plan> getPlans() {
+        Plan basic = new Plan(this.serviceName + "_postgresql-shared-plan", this.serviceName + "_shared",
                 "This plan will create a database on an existing PostgreSQL instance", getBasicPlanMetadata());
         return Arrays.asList(basic);
     }
