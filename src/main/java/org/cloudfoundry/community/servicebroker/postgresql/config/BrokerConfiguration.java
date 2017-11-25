@@ -50,15 +50,9 @@ public class BrokerConfiguration {
 
     private static final Logger logger = LoggerFactory.getLogger(BrokerConfiguration.class);
 
-    @Value("${MASTER_JDBC_URL}")
-    private String jdbcUrl;
-    
-    @Value("${SERVICE_NAME}")
+    private String jdbcURL;
     private String serviceName;
-    
-    private String vCapJDBCUrl;
-    
-    
+        
     @PostConstruct
     public void init(){
     	String vCapServices = System.getenv("VCAP_SERVICES");
@@ -71,12 +65,13 @@ public class BrokerConfiguration {
 		    		JSONObject pgObject = pgList.getJSONObject(i);
 		    		if(pgObject != null) {
 		    			JSONObject credentialsJSON = pgObject.getJSONObject("credentials");
+		    			this.serviceName = pgObject.getString("name");
 		    			String db = credentialsJSON.getString("db");
 		    			String user = credentialsJSON.getString("username");
 		    			String password = credentialsJSON.getString("password");
 		    			String host = credentialsJSON.getString("hostname");
 		    			String port = credentialsJSON.getString("port");
-		    			this.vCapJDBCUrl = "jdbc:postgresql://" + host + ":" + port + "/" + db + "?user=" + user + "&password=" + password;
+		    			this.jdbcURL = "jdbc:postgresql://" + host + ":" + port + "/" + db + "?user=" + user + "&password=" + password;
 		    			logger.info("JDBC URL found in VCAP settings: " + "jdbc:postgresql://" + host + ":" + port + "/" + db + "?user=" + user + "&password=....");
 		    			break; 
 		    		}
@@ -92,7 +87,7 @@ public class BrokerConfiguration {
     @Bean
     public JdbcTemplate jdbcTemplate(){        
     	DriverManagerDataSource dataSource = new DriverManagerDataSource();        
-        dataSource.setUrl(this.vCapJDBCUrl == null?this.jdbcUrl:this.vCapJDBCUrl);
+        dataSource.setUrl(this.jdbcURL);
         return new JdbcTemplate(dataSource);
     }
 
@@ -103,28 +98,28 @@ public class BrokerConfiguration {
 
     @Bean
     public Catalog catalog() throws IOException {
-        ServiceDefinition serviceDefinition = new ServiceDefinition("pg_shared_" + this.serviceName, "postgresql_shared_" + this.serviceName, "PostgreSQL " + this.serviceName + " on shared instance.",
+        ServiceDefinition serviceDefinition = new ServiceDefinition("pg_shared_" + this.serviceName, this.serviceName + "_postgresql_shared", "PostgreSQL database on shared instance: " + this.serviceName ,
                 true, false, getPlans(), getTags(), getServiceDefinitionMetadata(), Arrays.asList("syslog_drain"), null);
         return new Catalog(Arrays.asList(serviceDefinition));
     }
 
     private static List<String> getTags() {
-        return Arrays.asList("PostgreSQL", "Database storage");
+        return Arrays.asList("PostgreSQL", "Shared Instance");
     }
 
     private Map<String, Object> getServiceDefinitionMetadata() {
         Map<String, Object> sdMetadata = new HashMap<>();
-        sdMetadata.put("displayName", "PostgreSQL " + this.serviceName + " Shared");
+        sdMetadata.put("displayName", "PostgreSQL Shared on " + this.serviceName );
         sdMetadata.put("imageUrl", "https://wiki.postgresql.org/images/3/30/PostgreSQL_logo.3colors.120x120.png");
         sdMetadata.put("longDescription", "This service allows you to re-use a PostgreSQL instance for multiple Applications");
-        sdMetadata.put("providerDisplayName", "PostgreSQL " + this.serviceName + " Shared");
+        sdMetadata.put("providerDisplayName", "PostgreSQL DB Shared on " +  this.serviceName + " cluster");
         sdMetadata.put("documentationUrl", "https://github.com/mendix/postgresql_servicebroker_scp");
         sdMetadata.put("supportUrl", "https://github.com/mendix/postgresql_servicebroker_scp");
         return sdMetadata;
     }
 
     private List<Plan> getPlans() {
-        Plan basic = new Plan(this.serviceName + "_postgresql-shared-plan", this.serviceName + "_shared",
+        Plan basic = new Plan("postgresql-shared-plan-on-" + this.serviceName, "shared_on_" + this.serviceName,
                 "This plan will create a database on an existing PostgreSQL instance", getBasicPlanMetadata());
         return Arrays.asList(basic);
     }

@@ -5,7 +5,6 @@ memory: 1024M
 env:
     SPRING_PROFILES_ACTIVE: cloud
     JAVA_OPTS: -Dsecurity.user.password=yourSecret
-    SERVICE_NAME: yourUniqueName
 
 applications:
 - name: postgresql-cf-service-broker
