@@ -1,13 +1,13 @@
 # Cloud foundry Service Broker to share a PostgreSQL instance within a Space
 
 ## Background 
-This service broker allow you to share a PostgreSQL instance within a Space.  
+This service broker allows you to share a PostgreSQL instance within a Space.  
 
 The Service broker requires a PostgreSQL database bound as its master database. 
 
 A service provisioning call will create a PostgreSQL database within the Master database. A binding call will return a database uri that can be used to connect to the database. Unbinding calls will disable the database user role and deprovisioning calls will delete all resources created.
 
-The broker uses a PostgreSQL table for it's meta data. It does not maintain an internal database so it has no dependencies besides PostgreSQL.
+The broker uses a PostgreSQL table for it's meta data. It does not maintain an internal database, so it has no dependencies besides PostgreSQL.
 
 Capability with the Cloud Foundry service broker API is indicated by the project version number. For example, version 2.11.0 is based off the 2.11 version of the broker API.
 
@@ -18,7 +18,7 @@ Capability with the Cloud Foundry service broker API is indicated by the project
 
 - Download the package
 - Unzip
-- Push the Service Borker to CF
+- Push the Service Broker to CF
 - Config the service broker
 - Register the service broker
 - Check Marketplace
@@ -31,7 +31,7 @@ Capability with the Cloud Foundry service broker API is indicated by the project
 
 Unzip the package and open a cmd prompt in the unzipped folder.
 
-### 3. Push the serivce-broker app
+### 3. Push the service-broker app
 - Select the target space of your cloud foundry account. 
 ```
 $ cf login -a https://api.example.com -u username@example.com
@@ -70,7 +70,7 @@ cf push pg-shared-<org name>_<space name> --no-start
 cf set-env pg-shared-<org name>_<space name> JAVA_OPTS "-Dsecurity.user.password=mysecret"
 ```
 
-- Bind the a new PostgreSQL instance to the service-broker from your Marketplace. This will become the master database for your shared PostgreSQL service. 
+- Bind the new PostgreSQL instance from your Marketplace to the service-broker app. This will become the master database for your shared PostgreSQL service. 
 - Name your master PostgreSQL instance like `<org name>_<space name>`. This name will be used in the name of your new service broker.  
 
 ### 4. Register the Service broker
