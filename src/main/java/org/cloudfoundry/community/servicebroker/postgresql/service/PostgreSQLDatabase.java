@@ -4,7 +4,8 @@ import org.cloudfoundry.community.servicebroker.postgresql.model.PGServiceInstan
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.servicebroker.model.ServiceInstance;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -39,8 +40,11 @@ public class PostgreSQLDatabase {
                 + " planid varchar(200) not null default '',"
                 + " organizationguid varchar(200) not null default '',"
                 + " spaceguid varchar(200) not null default '')";
-
         jdbcTemplate.execute(serviceTable);
+        
+        String bindingTable = "CREATE TABLE IF NOT EXISTS binding (bindingid varchar(200) not null default '',"
+                + " servicedefinitionid varchar(200) not null default '')";
+        jdbcTemplate.execute(bindingTable);
     }
 
     public void createDatabaseForInstance(String instanceId, String serviceId,
@@ -128,8 +132,12 @@ public class PostgreSQLDatabase {
      * @return
      * @throws Exception
      */
-    public String bindRoleToDatabase(String serviceInstanceId) throws Exception {
-        Utils.checkValidUUID(serviceInstanceId);
+    public String bindRoleToDatabase(String serviceInstanceId, String bindingId) throws Exception {
+        
+    	logger.info("bind Role to Database for Service Instance Id: " + serviceInstanceId + " bindingId: " + bindingId);
+    	checkIfIsUnbinded(serviceInstanceId, bindingId);    	
+    	
+    	Utils.checkValidUUID(serviceInstanceId);
 
         SecureRandom random = new SecureRandom();
         String passwd = new BigInteger(130, random).toString(32);
@@ -142,12 +150,38 @@ public class PostgreSQLDatabase {
                 serviceInstanceId, passwd,
                 uri.getHost(), uri.getPort() == -1 ? 5432 : uri.getPort(), serviceInstanceId);
 
+        Map<Integer, String> parameterMap = new HashMap<Integer, String>();
+        parameterMap.put(1, bindingId);
+        parameterMap.put(2, serviceInstanceId);        
+        executePreparedUpdate("INSERT INTO binding (bindingId , servicedefinitionid) VALUES (?, ?)", parameterMap);
+        
         return dbURL;
     }
 
-    public void unBindRoleFromDatabase(String dbInstanceId) throws SQLException{
-        Utils.checkValidUUID(dbInstanceId);
-        executeUpdate("ALTER ROLE \"" + dbInstanceId + "\" NOLOGIN");
+    private void checkIfIsUnbinded(String serviceInstanceId, String bindingId) throws ServiceBrokerException, SQLException {
+    	
+        Map<Integer, String> parameterMap = new HashMap<Integer, String>();        
+        parameterMap.put(1, serviceInstanceId);
+
+    	Map<String, String> result = executePreparedSelect("SELECT * FROM binding where servicedefinitionid = ?", parameterMap);
+    	String foundbindingId = result.get("bindingid");    	
+    	if(foundbindingId != null) 	{
+    		logger.info("binding Found for serviceInstanceId: " + serviceInstanceId + " bindingId: " + foundbindingId);    		 
+    		throw new ServiceBrokerException("Service is already bound to another Appliation");
+    	}        	
+	}
+
+	public void unBindRoleFromDatabase(String serviceInstanceId, String bindingId) throws SQLException {
+		logger.info("unbind serviceInstanceId: " + serviceInstanceId + " bindingId: " + bindingId);
+    	
+		Utils.checkValidUUID(serviceInstanceId);
+        executeUpdate("ALTER ROLE \"" + serviceInstanceId + "\" NOLOGIN");
+        
+        
+        Map<Integer, String> parameterMap = new HashMap<Integer, String>();
+        parameterMap.put(1, bindingId);
+        parameterMap.put(2, serviceInstanceId);        
+        executePreparedUpdate("DELETE FROM binding WHERE bindingId =? and servicedefinitionid = ?", parameterMap);
     }
     /**
      *

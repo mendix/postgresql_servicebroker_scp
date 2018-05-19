@@ -26,7 +26,6 @@ import org.springframework.cloud.servicebroker.model.*;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.stereotype.Service;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,20 +47,22 @@ public class PostgreSQLServiceInstanceBindingService implements ServiceInstanceB
 
         String bindingId = createServiceInstanceBindingRequest.getBindingId();
         String serviceInstanceId = createServiceInstanceBindingRequest.getServiceInstanceId();
-        String appGuid = createServiceInstanceBindingRequest.getBoundAppGuid();
-
+        
         try {
 
-            String dbURL = postgresDB.bindRoleToDatabase(serviceInstanceId);
+            String dbURL = postgresDB.bindRoleToDatabase(serviceInstanceId, bindingId);
             Map<String, Object> credentials = new HashMap<String, Object>();
             credentials.put("uri", dbURL);
             return new CreateServiceInstanceAppBindingResponse().withCredentials(credentials);
 
-        } catch (Exception e) {
-            logger.error("Error while creating service instance binding '" + bindingId + "'", e);
-            throw new ServiceBrokerException(e.getMessage());
         }
-
+        catch(ServiceInstanceBindingExistsException es) {
+        	throw es; 
+        }
+        catch (Exception e) {
+            logger.error("Error while creating service instance binding '" + bindingId + "'", e);
+            throw new ServiceBrokerException(e.getMessage(), e);
+        }
     }
 
     @Override
@@ -69,12 +70,10 @@ public class PostgreSQLServiceInstanceBindingService implements ServiceInstanceB
         String serviceInstanceId = deleteServiceInstanceBindingRequest.getServiceInstanceId();
         String bindingId = deleteServiceInstanceBindingRequest.getBindingId();
         try {
-            postgresDB.unBindRoleFromDatabase(serviceInstanceId);
-        } catch (SQLException e) {
+            postgresDB.unBindRoleFromDatabase(serviceInstanceId, bindingId);
+        } catch (Exception e) {
             logger.error("Error while deleting service instance binding '" + bindingId + "'", e);
-//            throw new ServiceBrokerException(e.getMessage());
-        } catch(Exception e){
-            e.printStackTrace();
+            throw new ServiceBrokerException(e.getMessage());
         }
     }
 
