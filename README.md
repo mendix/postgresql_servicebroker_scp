@@ -25,7 +25,7 @@ Capability with the Cloud Foundry service broker API is indicated by the project
 
 
 ### 1. Download package
- https://github.com/mendix/postgresql_servicebroker_scp/releases/download/1.1/release.1.1.zip
+ https://github.com/mendix/postgresql_servicebroker_scp/releases/download/1.2/release.1.2.zip
 
 ### 2. Unzip
 
