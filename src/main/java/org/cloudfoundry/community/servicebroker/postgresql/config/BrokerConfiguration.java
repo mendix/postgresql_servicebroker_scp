@@ -66,7 +66,7 @@ public class BrokerConfiguration {
 		    		if(pgObject != null) {
 		    			JSONObject credentialsJSON = pgObject.getJSONObject("credentials");
 		    			this.serviceName = pgObject.getString("name");
-		    			String db = credentialsJSON.getString("db");
+		    			String db = credentialsJSON.getString("dbname");
 		    			String user = credentialsJSON.getString("username");
 		    			String password = credentialsJSON.getString("password");
 		    			String host = credentialsJSON.getString("hostname");
