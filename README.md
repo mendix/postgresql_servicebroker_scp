@@ -82,7 +82,7 @@ cf start pg-shared-<org name>_<space name>
 
 - Create Cloud Foundry service broker within the scope of your space:
 ```
-cf create-service-broker postgresql-shared-<org name>_<space name> user mysecret http://pg-shared-<org name>_<space name>.<your domain> --space-scoped
+cf create-service-broker postgresql-shared-<org name>_<space name> user mysecret https://pg-shared-<org name>_<space name>.<your domain> --space-scoped
 ```
 
 ### 5 Check the marketplace
