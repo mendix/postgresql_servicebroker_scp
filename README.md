@@ -70,8 +70,19 @@ cf push pg-shared-<org name>_<space name> --no-start
 cf set-env pg-shared-<org name>_<space name> JAVA_OPTS "-Dsecurity.user.password=mysecret"
 ```
 
-- Bind the new PostgreSQL instance from your Marketplace to the service-broker app. This will become the master database for your shared PostgreSQL service. 
-- Name your master PostgreSQL instance like `<org name>_<space name>`. This name will be used in the name of your new service broker.  
+- Create a PostgreSQL database and Bind it to your service broker
+The database you need to create becomes the master databasa. Before you are able to create this database you need to know which plans you have available in your account. 
+
+The command to create a new instance is: 
+```
+cf create-service postgresql <plan> masterdb_<org name>_<space name>
+```
+
+ - Bind your database to your service broker App. 
+
+```
+cf bind-service pg-shared-<org name>_<space name> masterdb_<org name>_<space name>
+```
 
 ### 4. Register the Service broker
 
