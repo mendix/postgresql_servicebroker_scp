@@ -86,14 +86,14 @@ cf bind-service pg-shared-<org name>_<space name> masterdb_<org name>_<space nam
 
 ### 4. Register the Service broker
 
-- Start the service broker App:
+- Restage and start the service broker App:
 ```
-cf start pg-shared-<org name>_<space name>
+cf restage pg-shared-<org name>_<space name>
 ```
 
 - Create Cloud Foundry service broker within the scope of your space:
 ```
-cf create-service-broker postgresql-shared-<org name>_<space name> user mysecret https://pg-shared-<org name>_<space name>.<your domain> --space-scoped
+cf create-service-broker postgresql-shared-<org name>_<space name> user mysecret https://pg-shared-<org name>-<space name>.<your domain> --space-scoped
 ```
 
 ### 5 Check the marketplace
